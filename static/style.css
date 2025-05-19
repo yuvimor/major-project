@@ -1,0 +1,146 @@
+/* Add these styles to your styles.css file */
+
+/* Recording indicator */
+.recording {
+  background-color: #ff4136 !important;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 65, 54, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 65, 54, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 65, 54, 0);
+  }
+}
+
+/* File upload area */
+.file-upload-area {
+  margin-top: 15px;
+  text-align: center;
+}
+
+.file-upload-btn {
+  display: inline-block;
+  padding: 10px 15px;
+  background-color: #673ab7;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.file-upload-btn:hover {
+  background-color: #5e35b1;
+}
+
+/* Intervention modal */
+.intervention-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.intervention-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .intervention-content {
+  background-color: #1e1e1e;
+  color: white;
+}
+
+.feedback-section {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.feedback-section button {
+  margin: 0 10px;
+  padding: 8px 16px;
+}
+
+#gameArea {
+  margin-top: 15px;
+}
+
+#wordGuess {
+  padding: 8px;
+  margin-right: 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+#checkGuess {
+  padding: 8px 16px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Transcription box styling */
+.transcription-box {
+  min-height: 100px;
+  background-color: white;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 10px 0;
+}
+
+body.dark-mode .transcription-box {
+  background-color: #333;
+  color: white;
+}
+
+/* Emotion state styling */
+.emotion-state {
+  font-weight: bold;
+  color: #673ab7;
+}
+
+body.dark-mode .emotion-state {
+  color: #bb86fc;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .grid-actions {
+    flex-direction: column;
+  }
+  
+  .action-btn {
+    margin-bottom: 10px;
+  }
+  
+  .palette-selection {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .palette-btn {
+    margin: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+  }
+}

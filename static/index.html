@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Emotion UI</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="theme-toggle">
+    <button id="themeToggle">🌙 Toggle Mode</button>
+  </div>
+
+  <div class="app-container">
+    <div class="header-bar">
+      <div class="project-name"> Assistive Homecare for Mild Dementia Patients </div>
+      <div class="welcome-msg">Welcome!</div>
+    </div>
+
+    <!-- Palette Selection for Light/Dark Mode -->
+    <div class="palette-selection">
+      <button id="calmPalette" class="palette-btn">Calm Palette</button>
+      <button id="brightPalette" class="palette-btn">Bright Palette</button>
+      <button id="serenePalette" class="palette-btn">Serene Palette</button>
+      <button id="sunsetPalette" class="palette-btn">Sunset Palette</button>
+      <button id="mysticPalette" class="palette-btn">Mystic Palette</button>
+      <button id="naturePalette" class="palette-btn">Nature Palette</button>
+      <button id="oceanPalette" class="palette-btn">Ocean Palette</button>
+      <button id="earthyPalette" class="palette-btn">Earthy Palette</button>
+      <button id="starryPalette" class="palette-btn">Starry Palette</button>
+      <button id="moonlitPalette" class="palette-btn">Moonlit Palette</button>
+      <button id="rainbowPalette" class="palette-btn">Rainbow Palette</button>
+      <button id="winterPalette" class="palette-btn">Winter Palette</button>
+      <button id="summerPalette" class="palette-btn">Summer Palette</button>
+      <button id="autumnPalette" class="palette-btn">Autumn Palette</button>
+      <button id="springPalette" class="palette-btn">Spring Palette</button>
+      <button id="fallPalette" class="palette-btn">Fall Palette</button>
+      <button id="snowyPalette" class="palette-btn">Snowy Palette</button>
+      <button id="rainyPalette" class="palette-btn">Rainy Palette</button>
+      <button id="cloudyPalette" class="palette-btn">Cloudy Palette</button>
+    </div>
+
+    <div class="card section-card">
+      <h2>🎤 Speech Input</h2>
+      <button class="btn gradient-btn" id="listenBtn">Start Listening</button>
+    </div>
+
+    <div class="card section-card">
+      <h2>📝 Transcription</h2>
+      <div class="transcription-box" placeholder="You said..."></div>
+    </div>
+
+    <div class="card emotion-card">
+      <div class="emotion-graph">
+        <canvas id="emotionGraph"></canvas>
+      </div>
+      <div class="emotion-text">
+        <h3>Detected Emotion: <span class="emotion-state" id="emotionState">Not Detected</span></h3>
+        <p id="emotionDetectedText">We're here to help.</p>
+      </div>
+    </div>
+
+    <div class="card section-card">
+      <h2>🚨 If Tri-triggered</h2>
+      <div class="grid-actions">
+        <button class="action-btn">🎵 Calming Music</button>
+        <button class="action-btn">🧘 Guided Meditation</button>
+        <button class="action-btn">🎮 Casual Game</button>
+      </div>
+    </div>
+
+    <div class="card section-card">
+      <h2>💊 Take Your Medicine</h2>
+      <div class="instruction-steps">
+        <p><strong>Instruction Steps (if ADL):</strong></p>
+        <p>1️⃣ Step 1: Go to the kitchen.</p>
+        <button class="btn done-btn">✅ I'm done</button>
+      </div>
+    </div>
+
+    <!-- 🧩 Emotion History Timeline Section -->
+    <div class="card section-card">
+      <h2>📈 Emotion History</h2>
+      <canvas id="emotionTimelineChart" height="150"></canvas>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
