@@ -1,10 +1,15 @@
-// script.js - Updated for FastAPI backend integration
-
 // Global variables
 let currentEmotion = null;
 let isRecording = false;
 let audioRecorder = null;
 let audioChunks = [];
+let patientInfo = {
+  name: 'Patient',
+  caregiverPhone: ''
+};
+
+// Twilio phone number - used for validation
+const TWILIO_PHONE_NUMBER = "+12183044061";
 
 // DOM Elements
 const themeToggle = document.getElementById("themeToggle");
@@ -12,190 +17,81 @@ const body = document.body;
 const emotionState = document.getElementById("emotionState");
 const emotionDetectedText = document.getElementById("emotionDetectedText");
 const listenBtn = document.getElementById("listenBtn");
-const transcriptionBox = document.querySelector(".transcription-box");
-const actionButtons = document.querySelectorAll(".action-btn");
-const ctx = document.getElementById("emotionGraph").getContext("2d");
+const transcriptionBox = document.getElementById("transcriptionBox");
+const recordingStatus = document.getElementById("recordingStatus");
+const interventionCard = document.getElementById("interventionCard");
+const interventionContent = document.getElementById("interventionContent");
+const feedbackArea = document.getElementById("feedbackArea");
+const emotionSection = document.getElementById("emotionSection");
+const patientInfoModal = document.getElementById("patientInfoModal");
+const patientInfoForm = document.getElementById("patientInfoForm");
+const skipButton = document.getElementById("skipButton");
 
-// API endpoint base - change this to match your deployed API
-const API_BASE = "http://localhost:8000";
+// Theme toggle
+themeToggle.addEventListener("click", () => {
+  body.classList.toggle("dark-mode");
+  const mode = body.classList.contains("dark-mode") ? 'dark' : 'light';
+  themeToggle.textContent = mode === 'dark' ? "☀️ Light Mode" : "🌙 Dark Mode";
+  localStorage.setItem("theme", mode);
+});
 
-// Theme toggle and chart initialization code (keep your existing code)
-// ...
-
-// Initialize charts
-let emotionChart;
-let emotionTimelineChart;
-
-// Emotion data for pie chart
-const emotionData = {
-  labels: ['Happy', 'Sad', 'Anger', 'Fear'],
-  datasets: [{
-    data: [0.3, 0.2, 0.15, 0.15],
-    backgroundColor: []
-  }]
-};
-
-const lightColors = ['#ffeb3b', '#ff9800', '#f44336', '#8bc34a'];
-const darkColors = ['#ffee58', '#ffb74d', '#ef5350', '#aed581'];
-
-// Update chart colors
-function updateChartColors(mode) {
-  emotionChart.data.datasets[0].backgroundColor = mode === 'dark' ? darkColors : lightColors;
-  emotionChart.options.plugins.legend.labels.color = mode === 'dark' ? 'white' : 'black';
-  emotionChart.update();
-}
-
-// Initialize Pie Chart
-function initChart(mode = 'light') {
-  emotionData.datasets[0].backgroundColor = mode === 'dark' ? darkColors : lightColors;
-  emotionChart = new Chart(ctx, {
-    type: 'pie',
-    data: emotionData,
-    options: {
-      responsive: true,
-      plugins: {
-        legend: {
-          position: 'top',
-          labels: {
-            color: mode === 'dark' ? 'white' : 'black'
-          }
-        },
-        tooltip: { enabled: true }
-      }
-    }
-  });
-}
-
-// Timeline Chart Initialization
-function initEmotionTimelineChart(mode = 'light') {
-  const timelineCtx = document.getElementById("emotionTimelineChart").getContext("2d");
-
-  if (emotionTimelineChart) {
-    emotionTimelineChart.destroy();
+// Listen button event handler
+listenBtn.addEventListener("click", function() {
+  if (!isRecording) {
+    startRecording();
+  } else {
+    stopRecording();
   }
+});
 
-  emotionTimelineChart = new Chart(timelineCtx, {
-    type: 'line',
-    data: {
-      labels: ["10 AM", "12 PM", "2 PM", "4 PM", "6 PM"],
-      datasets: [
-        {
-          label: "Happy",
-          data: [30, 40, 35, 50, 60],
-          borderColor: "#4caf50",
-          fill: false
-        },
-        {
-          label: "Sad",
-          data: [10, 15, 20, 18, 12],
-          borderColor: "#2196f3",
-          fill: false
-        },
-        {
-          label: "Anger",
-          data: [5, 8, 6, 10, 8],
-          borderColor: "#f44336",
-          fill: false
-        },
-        {
-          label: "Fear",
-          data: [7, 9, 11, 13, 10],
-          borderColor: "#9c27b0",
-          fill: false
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: {
-          labels: {
-            color: mode === 'dark' ? 'white' : 'black'
-          }
-        }
-      },
-      scales: {
-        x: {
-          ticks: {
-            color: mode === 'dark' ? 'white' : 'black'
-          }
-        },
-        y: {
-          ticks: {
-            color: mode === 'dark' ? 'white' : 'black'
-          },
-          beginAtZero: true
-        }
-      }
-    }
-  });
-}
+// Audio file upload handler
+document.getElementById('audioFileUpload').addEventListener('change', function(e) {
+  if (e.target.files.length > 0) {
+    processAudioFile(e.target.files[0]);
+  }
+});
 
-// Update emotion chart based on detected emotion
-function updateEmotionChart(emotion) {
-  // Reset all values to low
-  const baseValues = [0.1, 0.1, 0.1, 0.1];
+// Patient info form handler
+patientInfoForm.addEventListener('submit', function(e) {
+  e.preventDefault();
+  patientInfo.name = document.getElementById('patientName').value;
+  patientInfo.caregiverPhone = document.getElementById('caregiverPhone').value;
   
-  // Find the index of the detected emotion
-  const emotionMap = {
-    'Happy': 0,
-    'Sad': 1,
-    'Anger': 2,
-    'Fear': 3,
-    // Add mappings for other emotions if needed
-  };
-  
-  const index = emotionMap[emotion] || 0;
-  
-  // Set the detected emotion to a higher value
-  baseValues[index] = 0.7;
-  
-  // Update chart
-  emotionChart.data.datasets[0].data = baseValues;
-  emotionChart.update();
-  
-  // Also update the timeline chart
-  updateEmotionTimeline(emotion);
-}
-
-// Update emotion timeline
-function updateEmotionTimeline(emotion) {
-  // Get current time
-  const now = new Date();
-  const timeStr = now.getHours() + ":" + (now.getMinutes() < 10 ? '0' : '') + now.getMinutes();
-  
-  // Add new time point
-  emotionTimelineChart.data.labels.push(timeStr);
-  
-  // Ensure we don't have too many data points (keep last 6)
-  if (emotionTimelineChart.data.labels.length > 6) {
-    emotionTimelineChart.data.labels.shift();
-    emotionTimelineChart.data.datasets.forEach(dataset => {
-      dataset.data.shift();
-    });
+  // Basic validation for phone number
+  if (!patientInfo.caregiverPhone.startsWith('+')) {
+    alert("Phone number must be in international format (start with +)");
+    return;
   }
   
-  // Update each emotion value
-  const emotionValues = {
-    'Happy': [60, 10, 5, 5],
-    'Sad': [10, 60, 15, 10],
-    'Anger': [5, 15, 60, 10],
-    'Fear': [5, 20, 15, 60],
-    // Add mappings for other emotions
-  };
+  // Check if it matches the Twilio number
+  if (patientInfo.caregiverPhone === TWILIO_PHONE_NUMBER) {
+    alert("The caregiver phone number cannot be the same as the Twilio number.");
+    return;
+  }
   
-  const values = emotionValues[emotion] || [25, 25, 25, 25];
+  // Save to localStorage only if remember checkbox is checked
+  if (document.getElementById('rememberInfo').checked) {
+    localStorage.setItem('patientInfo', JSON.stringify(patientInfo));
+  } else {
+    // Clear localStorage if not remembering
+    localStorage.removeItem('patientInfo');
+  }
   
-  // Update datasets
-  emotionTimelineChart.data.datasets.forEach((dataset, index) => {
-    dataset.data.push(values[index]);
-  });
-  
-  // Update chart
-  emotionTimelineChart.update();
-}
+  // Hide the modal
+  patientInfoModal.style.display = 'none';
+});
 
-// Audio recording functions
+// Skip button handler
+skipButton.addEventListener('click', function() {
+  // Use default values for testing
+  patientInfo.name = document.getElementById('patientName').value || 'Test Patient';
+  patientInfo.caregiverPhone = document.getElementById('caregiverPhone').value || '+10000000000';
+  
+  // Hide the modal
+  patientInfoModal.style.display = 'none';
+});
+
+// Start recording audio
 async function startRecording() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -207,35 +103,42 @@ async function startRecording() {
     });
     
     audioRecorder.start();
-    return true;
+    isRecording = true;
+    listenBtn.textContent = "Stop Recording";
+    listenBtn.classList.add("recording");
+    recordingStatus.textContent = "Recording in progress...";
+    
   } catch (error) {
     console.error("Error accessing microphone:", error);
-    return false;
+    alert("Could not access microphone. Please check permissions.");
   }
 }
 
+// Stop recording and process audio
 async function stopRecording() {
-  return new Promise((resolve, reject) => {
-    if (!audioRecorder) {
-      reject("No recording in progress");
-      return;
-    }
-    
+  if (!audioRecorder) return;
+  
+  return new Promise((resolve) => {
     audioRecorder.addEventListener('stop', async () => {
       try {
         const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
         await processAudioFile(audioBlob);
-        resolve(true);
+        resolve();
       } catch (error) {
-        reject(error);
+        console.error("Error processing audio:", error);
+        recordingStatus.textContent = "Error processing audio.";
+        resolve();
       }
     });
     
     audioRecorder.stop();
+    isRecording = false;
+    listenBtn.textContent = "Start Recording";
+    listenBtn.classList.remove("recording");
   });
 }
 
-// Process audio file (either recorded or uploaded)
+// Process audio file (uploaded or recorded)
 async function processAudioFile(audioBlob) {
   // Create form data to send the audio file
   const formData = new FormData();
@@ -244,9 +147,10 @@ async function processAudioFile(audioBlob) {
   try {
     // Show loading indicator
     transcriptionBox.textContent = "Processing audio...";
+    recordingStatus.textContent = "Analyzing audio...";
     
-    // Send to FastAPI backend
-    const response = await fetch(`${API_BASE}/api/process-audio`, {
+    // Send to backend API
+    const response = await fetch('/api/process-audio', {
       method: 'POST',
       body: formData
     });
@@ -265,15 +169,19 @@ async function processAudioFile(audioBlob) {
   } catch (error) {
     console.error("Error processing audio:", error);
     transcriptionBox.textContent = "Error processing audio: " + error.message;
+    recordingStatus.textContent = "";
   }
 }
 
 // Update UI with processing results
 function updateUIWithResults(result) {
+  // Clear recording status
+  recordingStatus.textContent = "";
+  
   // Update transcription
   if (result.translation) {
     transcriptionBox.innerHTML = `
-      <p><strong>${result.language}:</strong> ${result.transcription}</p>
+      <p><strong>Original (${result.language}):</strong> ${result.transcription}</p>
       <p><strong>English:</strong> ${result.translation}</p>
     `;
   } else {
@@ -283,24 +191,46 @@ function updateUIWithResults(result) {
   }
   
   // Update emotion display
-  emotionState.textContent = result.emotion;
+  const emotionDisplay = result.emotion.charAt(0).toUpperCase() + result.emotion.slice(1);
+  emotionState.textContent = emotionDisplay;
   currentEmotion = result.emotion;
   
-  // Update emotion chart
-  updateEmotionChart(result.emotion);
+  // Show emotion section
+  emotionSection.style.display = "block";
   
-  // If negative emotion, offer intervention
-  if (["Sad", "Angry", "Fearful", "Disgusted", "Surprised"].includes(result.emotion)) {
+  // Update emotion text
+  emotionDetectedText.textContent = getEmotionMessage(result.emotion);
+  
+  // If negative emotion, get intervention
+  const negativeEmotions = ["sad", "angry", "fearful", "disgusted", "surprised"];
+  if (negativeEmotions.includes(result.emotion.toLowerCase())) {
     getRecommendedIntervention(result.emotion);
   } else {
-    emotionDetectedText.textContent = "We're here to help if you need us.";
+    // Hide intervention card for positive emotions
+    interventionCard.style.display = "none";
   }
+}
+
+// Get customized message based on detected emotion
+function getEmotionMessage(emotion) {
+  const messages = {
+    'happy': "You seem to be in a good mood!",
+    'sad': "You seem to be feeling down. Would you like some assistance?",
+    'angry': "You appear to be upset. Let's try to help you feel better.",
+    'fearful': "You seem to be anxious. We can help you calm down.",
+    'disgusted': "You seem to be uncomfortable. Let's try to improve your mood.",
+    'surprised': "You seem startled. Let's help you process this.",
+    'neutral': "You seem to be feeling neutral.",
+    'calm': "You seem to be in a calm state."
+  };
+  
+  return messages[emotion.toLowerCase()] || "We're here to help.";
 }
 
 // Get recommended intervention from backend
 async function getRecommendedIntervention(emotion) {
   try {
-    const response = await fetch(`${API_BASE}/api/get-intervention/${emotion.toLowerCase()}`);
+    const response = await fetch(`/api/get-intervention/${emotion.toLowerCase()}`);
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.detail || 'Failed to get intervention');
@@ -309,125 +239,119 @@ async function getRecommendedIntervention(emotion) {
     const data = await response.json();
     const action = data.action;
     
-    // Update UI with suggested intervention
-    emotionDetectedText.innerHTML = `We detected you might be feeling ${emotion}.<br>Would you like assistance?<br><button id="suggestedAction" class="btn gradient-btn">Try ${action.replace('_', ' ')}</button>`;
+    // If no intervention needed, return
+    if (action === "no_intervention") {
+      interventionCard.style.display = "none";
+      return;
+    }
     
-    // Add click handler for suggested action
-    document.getElementById("suggestedAction").addEventListener("click", function() {
-      performIntervention(action);
-    });
+    // Show intervention card
+    interventionCard.style.display = "block";
+    
+    // Perform intervention
+    performIntervention(action);
     
   } catch (error) {
     console.error("Error getting intervention:", error);
     emotionDetectedText.textContent = "We're here to help if you need us.";
+    interventionCard.style.display = "none";
   }
 }
 
 // Perform an intervention
 function performIntervention(action) {
   // Display the intervention based on the action
-  let interventionContent = '';
+  let interventionHtml = '';
   
   switch(action) {
     case 'calming_music':
-      interventionContent = `
-        <h4>Calming Music</h4>
+      interventionHtml = `
+        <h3>Calming Music</h3>
+        <p>Let's listen to some calming music to help you relax.</p>
         <audio controls autoplay>
-          <source src="calming_music.mp3" type="audio/mpeg">
+          <source src="/static/calming_music.mp3" type="audio/mpeg">
           Your browser does not support the audio element.
         </audio>
       `;
       break;
     case 'meditation':
-      interventionContent = `
-        <h4>Guided Meditation</h4>
+      interventionHtml = `
+        <h3>Guided Meditation</h3>
+        <p>Let's try a brief guided meditation to help you feel better.</p>
         <audio controls autoplay>
-          <source src="meditation.mp3" type="audio/mpeg">
+          <source src="/static/meditation.mp3" type="audio/mpeg">
           Your browser does not support the audio element.
         </audio>
       `;
       break;
     case 'play_game':
-      interventionContent = `
-        <h4>Word Shuffle Game</h4>
-        <div id="gameArea">
-          <p>Unscramble this word: <span id="scrambledWord">amcl</span></p>
-          <input type="text" id="wordGuess" placeholder="Enter your guess">
-          <button id="checkGuess" class="btn">Check</button>
+      interventionHtml = `
+        <h3>Tic Tac Toe Game</h3>
+        <p>Let's play a quick game to shift your focus.</p>
+        <div id="ticTacToeGame">
+          <div class="game-board">
+            <div class="cell" data-cell-index="0"></div>
+            <div class="cell" data-cell-index="1"></div>
+            <div class="cell" data-cell-index="2"></div>
+            <div class="cell" data-cell-index="3"></div>
+            <div class="cell" data-cell-index="4"></div>
+            <div class="cell" data-cell-index="5"></div>
+            <div class="cell" data-cell-index="6"></div>
+            <div class="cell" data-cell-index="7"></div>
+            <div class="cell" data-cell-index="8"></div>
+          </div>
+          <div class="game-status">Your turn (X). Click on a cell to play.</div>
+          <button id="resetGame" class="btn">Reset Game</button>
         </div>
       `;
       break;
+    default:
+      interventionHtml = `
+        <h3>Assistance</h3>
+        <p>We're here to help you feel better. Let's try some deep breathing together.</p>
+      `;
   }
   
-  // Create a modal for intervention
-  const interventionModal = document.createElement('div');
-  interventionModal.className = 'intervention-modal';
-  interventionModal.innerHTML = `
-    <div class="intervention-content">
-      ${interventionContent}
-      <div class="feedback-section">
-        <p>Did this help you feel better?</p>
-        <button id="feedbackYes" class="btn">Yes</button>
-        <button id="feedbackNo" class="btn">No</button>
-      </div>
+  // Display intervention
+  interventionContent.innerHTML = interventionHtml;
+  
+  // Add feedback buttons
+  feedbackArea.innerHTML = `
+    <p>Did this help you feel better?</p>
+    <div class="feedback-buttons">
+      <button id="feedbackYes" class="btn gradient-btn">Yes, it helped</button>
+      <button id="feedbackNo" class="btn gradient-btn">No, not really</button>
     </div>
   `;
   
-  document.body.appendChild(interventionModal);
-  
-  // Add event listeners for game if applicable
+  // Add Tic Tac Toe game logic if that's the intervention
   if (action === 'play_game') {
-    document.getElementById('checkGuess').addEventListener('click', function() {
-      const guess = document.getElementById('wordGuess').value.toLowerCase();
-      if (guess === 'calm') {
-        document.getElementById('gameArea').innerHTML = '<p>✅ Correct! Great job!</p>';
-      } else {
-        document.getElementById('gameArea').innerHTML = '<p>❌ Not quite. The word was "calm". Try again next time!</p>';
-      }
-    });
+    initTicTacToe();
   }
   
   // Add feedback handlers
   document.getElementById('feedbackYes').addEventListener('click', function() {
-    updateQTable(currentEmotion.toLowerCase(), action, 2);
-    document.body.removeChild(interventionModal);
-    emotionDetectedText.textContent = "I'm glad that helped! Is there anything else you need?";
+    handleFeedback(currentEmotion, action, true);
   });
   
   document.getElementById('feedbackNo').addEventListener('click', function() {
-    updateQTable(currentEmotion.toLowerCase(), action, -1);
-    document.body.removeChild(interventionModal);
-    
-    // Offer alternatives
-    emotionDetectedText.innerHTML = `
-      <p>I'm sorry that didn't help. Would you like to:</p>
-      <button id="tryAnother" class="btn gradient-btn">Try another approach</button>
-      <button id="contactCaregiver" class="btn gradient-btn">Contact caregiver</button>
-    `;
-    
-    document.getElementById('tryAnother').addEventListener('click', function() {
-      // Get a different intervention
-      getRecommendedIntervention(currentEmotion);
-    });
-    
-    document.getElementById('contactCaregiver').addEventListener('click', function() {
-      contactCaregiver();
-    });
+    handleFeedback(currentEmotion, action, false);
   });
 }
 
-// Update Q-table with feedback
-async function updateQTable(emotion, action, reward) {
+// Handle user feedback on intervention
+async function handleFeedback(emotion, action, positive) {
   try {
-    const response = await fetch(`${API_BASE}/api/update-q-table`, {
+    // Update Q-table
+    const response = await fetch('/api/update-q-table', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        emotion: emotion,
+        emotion: emotion.toLowerCase(),
         action: action,
-        reward: reward
+        reward: positive ? 2 : -1
       })
     });
     
@@ -436,109 +360,324 @@ async function updateQTable(emotion, action, reward) {
       throw new Error(errorData.detail || 'Failed to update Q-table');
     }
     
-    const data = await response.json();
-    console.log('Q-table updated:', data);
+    if (positive) {
+      // Positive feedback
+      feedbackArea.innerHTML = `
+        <p>I'm glad that helped! Is there anything else you need?</p>
+      `;
+    } else {
+      // Negative feedback
+      feedbackArea.innerHTML = `
+        <p>I'm sorry that didn't help. Would you like to:</p>
+        <div class="feedback-buttons">
+          <button id="tryAnother" class="btn gradient-btn">Try another approach</button>
+          <button id="contactCaregiver" class="btn gradient-btn">Contact caregiver</button>
+        </div>
+      `;
+      
+      document.getElementById('tryAnother').addEventListener('click', function() {
+        // Get a different intervention
+        getRecommendedIntervention(emotion);
+      });
+      
+      document.getElementById('contactCaregiver').addEventListener('click', function() {
+        contactCaregiver();
+      });
+    }
     
   } catch (error) {
     console.error('Error updating Q-table:', error);
+    feedbackArea.innerHTML = `<p>There was an error processing your feedback. Please try again.</p>`;
   }
 }
 
-// Contact caregiver
-function contactCaregiver() {
-  emotionDetectedText.innerHTML = `<p>Contacting caregiver...</p>`;
-  
-  // Simulate contacting caregiver (in a real app, this would call an API)
-  setTimeout(() => {
-    emotionDetectedText.innerHTML = `<p>Message sent to caregiver. They will check in with you soon.</p>`;
-  }, 2000);
-}
-
-// Event listeners
-document.addEventListener('DOMContentLoaded', function() {
-  // Add theme toggle listeners
-  themeToggle.addEventListener("click", () => {
-    body.classList.toggle("dark-mode");
-    const mode = body.classList.contains("dark-mode") ? 'dark' : 'light';
-    themeToggle.textContent = mode === 'dark' ? "🌞 Light Mode" : "🌙 Dark Mode";
-    localStorage.setItem("theme", mode);
-    updateChartColors(mode);
-    initEmotionTimelineChart(mode);
-  });
-  
-  // Add listen button listener
-  listenBtn.addEventListener("click", function() {
-    if (!isRecording) {
-      startListening();
-    } else {
-      stopListening();
-    }
-  });
-  
-  // Add file upload area
-  const fileUploadArea = document.createElement('div');
-  fileUploadArea.className = 'file-upload-area';
-  fileUploadArea.innerHTML = `
-    <label for="audioFileUpload" class="file-upload-btn">Upload Audio File</label>
-    <input type="file" id="audioFileUpload" accept="audio/*" style="display: none;">
+// Contact caregiver function with SMS
+async function contactCaregiver() {
+  interventionContent.innerHTML = `
+    <h3>Contacting Caregiver</h3>
+    <p>Sending message to caregiver...</p>
   `;
   
-  document.querySelector('.card.section-card:nth-child(3)').appendChild(fileUploadArea);
+  feedbackArea.innerHTML = '';
   
-  document.getElementById('audioFileUpload').addEventListener('change', function(e) {
-    if (e.target.files.length > 0) {
-      processAudioFile(e.target.files[0]);
+  try {
+    // Check if phone number is the same as Twilio number (client-side validation)
+    if (patientInfo.caregiverPhone === TWILIO_PHONE_NUMBER) {
+      throw new Error("The caregiver phone number cannot be the same as your Twilio number.");
     }
-  });
-  
-  // Add action button listeners
-  actionButtons.forEach((button, index) => {
-    button.addEventListener("click", function() {
-      const actions = ["calming_music", "meditation", "play_game"];
-      if (currentEmotion && ["Sad", "Anger", "Fear", "Disgusted", "Surprised"].includes(currentEmotion)) {
-        const action = actions[index];
-        performIntervention(action);
-      } else {
-        alert("No negative emotion detected that requires intervention.");
-      }
+    
+    // Send SMS notification to caregiver
+    const response = await fetch('/api/contact-caregiver-sms', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        patientName: patientInfo.name,
+        phoneNumber: patientInfo.caregiverPhone,
+        emotion: currentEmotion,
+        timestamp: new Date().toISOString(),
+        message: `${patientInfo.name} is currently feeling ${currentEmotion} and may need assistance.`
+      })
     });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      interventionContent.innerHTML = `
+        <h3>Caregiver Notified</h3>
+        <p>Your caregiver has been notified via SMS and will check in with you soon.</p>
+        <div class="sms-sent-alert">SMS sent successfully!</div>
+        <p>In the meantime, would you like to try some deep breathing exercises?</p>
+        <button id="tryBreathing" class="btn gradient-btn">Try breathing exercises</button>
+      `;
+    } else {
+      interventionContent.innerHTML = `
+        <h3>Notification Error</h3>
+        <p>There was an issue contacting your caregiver.</p>
+        <div class="sms-error-alert">Error: ${result.message}</div>
+        <p>Would you like to try a different intervention instead?</p>
+        <button id="tryDifferent" class="btn gradient-btn">Try different intervention</button>
+      `;
+      
+      document.getElementById('tryDifferent').addEventListener('click', function() {
+        getRecommendedIntervention(currentEmotion);
+      });
+    }
+    
+    // Add breathing exercise functionality if successful
+    if (result.success) {
+      document.getElementById('tryBreathing').addEventListener('click', function() {
+        startBreathingExercise();
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error contacting caregiver:', error);
+    interventionContent.innerHTML = `
+      <h3>Notification Error</h3>
+      <p>There was an issue contacting your caregiver.</p>
+      <div class="sms-error-alert">Error: ${error.message}</div>
+      <p>Would you like to try a different intervention instead?</p>
+      <button id="tryDifferent" class="btn gradient-btn">Try different intervention</button>
+    `;
+    
+    document.getElementById('tryDifferent').addEventListener('click', function() {
+      getRecommendedIntervention(currentEmotion);
+    });
+  }
+}
+
+// Start breathing exercise
+function startBreathingExercise() {
+  interventionContent.innerHTML = `
+    <h3>Deep Breathing</h3>
+    <p>Let's try some deep breathing together:</p>
+    <div class="breathing-exercise">
+      <p id="breathingInstruction">Breathe in deeply...</p>
+      <div class="breathing-circle"></div>
+    </div>
+  `;
+  
+  // Simple breathing exercise animation
+  let count = 0;
+  const breathingInstructions = [
+    "Breathe in deeply...",
+    "Hold your breath...",
+    "Breathe out slowly...",
+    "Relax..."
+  ];
+  
+  const breathingInterval = setInterval(() => {
+    document.getElementById('breathingInstruction').textContent = breathingInstructions[count % 4];
+    count++;
+    
+    if (count > 16) {  // 4 full cycles
+      clearInterval(breathingInterval);
+      interventionContent.innerHTML += `
+        <p>Great job! Do you feel more relaxed now?</p>
+      `;
+    }
+  }, 3000);
+}
+
+// Tic Tac Toe game logic
+function initTicTacToe() {
+  let currentPlayer = 'X';
+  const cells = document.querySelectorAll('.cell');
+  const gameStatus = document.querySelector('.game-status');
+  const resetButton = document.getElementById('resetGame');
+  let gameActive = true;
+  let gameState = ['', '', '', '', '', '', '', '', ''];
+  
+  const winningConditions = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+    [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+    [0, 4, 8], [2, 4, 6]             // diagonals
+  ];
+  
+  // Cell clicked function
+  function handleCellClick(e) {
+    const clickedCell = e.target;
+    const clickedCellIndex = parseInt(clickedCell.getAttribute('data-cell-index'));
+    
+    // Check if cell already played or game over
+    if (gameState[clickedCellIndex] !== '' || !gameActive) {
+      return;
+    }
+    
+    // Update the game state
+    gameState[clickedCellIndex] = currentPlayer;
+    clickedCell.textContent = currentPlayer;
+    clickedCell.classList.add(currentPlayer === 'X' ? 'player-x' : 'player-o');
+    
+    // Check for win or draw
+    checkResult();
+    
+    // Computer's turn (simple AI)
+    if (gameActive && currentPlayer === 'X') {
+      currentPlayer = 'O';
+      gameStatus.textContent = "Computer's turn (O)...";
+      
+      // Slight delay for computer's move
+      setTimeout(() => {
+        makeComputerMove();
+        checkResult();
+        currentPlayer = 'X';
+        if (gameActive) {
+          gameStatus.textContent = "Your turn (X). Click on a cell to play.";
+        }
+      }, 700);
+    }
+  }
+  
+  // Simple AI for computer moves
+  function makeComputerMove() {
+    // Try to win if possible
+    for (let i = 0; i < gameState.length; i++) {
+      if (gameState[i] === '') {
+        gameState[i] = 'O';
+        if (checkWin('O')) {
+          cells[i].textContent = 'O';
+          cells[i].classList.add('player-o');
+          return;
+        }
+        gameState[i] = '';
+      }
+    }
+    
+    // Block player from winning
+    for (let i = 0; i < gameState.length; i++) {
+      if (gameState[i] === '') {
+        gameState[i] = 'X';
+        if (checkWin('X')) {
+          gameState[i] = 'O';
+          cells[i].textContent = 'O';
+          cells[i].classList.add('player-o');
+          return;
+        }
+        gameState[i] = '';
+      }
+    }
+    
+    // Try center if available
+    if (gameState[4] === '') {
+      gameState[4] = 'O';
+      cells[4].textContent = 'O';
+      cells[4].classList.add('player-o');
+      return;
+    }
+    
+    // Just pick a random empty cell
+    const emptyCells = [];
+    for (let i = 0; i < gameState.length; i++) {
+      if (gameState[i] === '') {
+        emptyCells.push(i);
+      }
+    }
+    
+    if (emptyCells.length > 0) {
+      const randomIndex = Math.floor(Math.random() * emptyCells.length);
+      const cellIndex = emptyCells[randomIndex];
+      gameState[cellIndex] = 'O';
+      cells[cellIndex].textContent = 'O';
+      cells[cellIndex].classList.add('player-o');
+    }
+  }
+  
+  // Check if a player has won
+  function checkWin(player) {
+    return winningConditions.some(condition => {
+      return condition.every(index => {
+        return gameState[index] === player;
+      });
+    });
+  }
+  
+  // Check result after a move
+  function checkResult() {
+    let roundWon = checkWin(currentPlayer);
+    
+    if (roundWon) {
+      gameStatus.textContent = currentPlayer === 'X' ? "You won!" : "Computer won!";
+      gameActive = false;
+      return;
+    }
+    
+    // Check for draw
+    let roundDraw = !gameState.includes('');
+    if (roundDraw) {
+      gameStatus.textContent = "Game ended in a draw!";
+      gameActive = false;
+      return;
+    }
+  }
+  
+  // Reset game
+  function resetGame() {
+    gameActive = true;
+    currentPlayer = 'X';
+    gameState = ['', '', '', '', '', '', '', '', ''];
+    gameStatus.textContent = "Your turn (X). Click on a cell to play.";
+    cells.forEach(cell => {
+      cell.textContent = '';
+      cell.classList.remove('player-x', 'player-o');
+    });
+  }
+  
+  // Add event listeners
+  cells.forEach(cell => {
+    cell.addEventListener('click', handleCellClick);
   });
   
-  // Initialize app
+  resetButton.addEventListener('click', resetGame);
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+  // Load saved theme
   const savedTheme = localStorage.getItem("theme") || 'light';
   if (savedTheme === 'dark') {
     body.classList.add("dark-mode");
-    themeToggle.textContent = "🌞 Light Mode";
+    themeToggle.textContent = "☀️ Light Mode";
   }
   
-  // Initialize charts
-  initChart(savedTheme);
-  initEmotionTimelineChart(savedTheme);
+  // Load saved patient info
+  const savedPatientInfo = localStorage.getItem('patientInfo');
+  if (savedPatientInfo) {
+    patientInfo = JSON.parse(savedPatientInfo);
+    
+    // Pre-fill the form with saved data
+    document.getElementById('patientName').value = patientInfo.name || '';
+    document.getElementById('caregiverPhone').value = patientInfo.caregiverPhone || '';
+  }
+  
+  // Always show patient info modal on page load
+  patientInfoModal.style.display = 'flex';
+  
+  // Hide emotion section initially
+  emotionSection.style.display = "none";
+  
+  // Hide intervention card initially
+  interventionCard.style.display = "none";
 });
-
-function startListening() {
-  listenBtn.textContent = "Stop Listening";
-  listenBtn.classList.add("recording");
-  isRecording = true;
-  
-  startRecording()
-    .then(() => {
-      transcriptionBox.textContent = "Listening...";
-    })
-    .catch(error => {
-      console.error("Error starting recording:", error);
-      alert("Could not access microphone. Please check permissions.");
-      stopListening();
-    });
-}
-
-function stopListening() {
-  listenBtn.textContent = "Start Listening";
-  listenBtn.classList.remove("recording");
-  isRecording = false;
-  
-  stopRecording()
-    .catch(error => {
-      console.error("Error processing recording:", error);
-    });
-}
