@@ -2,10 +2,9 @@ fastapi==0.95.0
 uvicorn==0.21.1
 pydantic==1.10.7
 python-multipart==0.0.6
-whisper==1.1.10
+openai-whisper
 librosa==0.10.0
-numpy==1.23.5
+numpy==2.0.2
 transformers==4.28.1
 joblib==1.2.0
 soundfile==0.12.1
-torch==2.0.0
