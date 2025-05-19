@@ -1,0 +1,348 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #f4f4f4;
+  color: #333;
+  transition: all 0.3s ease;
+}
+
+body.dark-mode {
+  background: #121212;
+  color: #f4f4f4;
+}
+
+.app-container {
+  padding: 20px;
+  max-width: 960px;
+  margin: auto;
+}
+
+.card {
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  margin: 16px 0;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+body.dark-mode .card {
+  background: #1e1e1e;
+  box-shadow: 0 2px 5px rgba(255,255,255,0.1);
+}
+
+.header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.project-name {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.theme-toggle button {
+  background: #673ab7;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn {
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  background: #673ab7;
+  color: white;
+  margin-right: 10px;
+}
+
+.gradient-btn {
+  background: linear-gradient(45deg, #673ab7, #3f51b5);
+  transition: all 0.3s;
+}
+
+.gradient-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.speech-controls {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.file-upload-area {
+  margin-left: 10px;
+}
+
+.file-upload-btn {
+  display: inline-block;
+  padding: 10px 15px;
+  background: linear-gradient(45deg, #ff9800, #ff5722);
+  color: white;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.file-upload-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.transcription-box {
+  min-height: 80px;
+  background-color: rgba(0,0,0,0.05);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+body.dark-mode .transcription-box {
+  background-color: rgba(255,255,255,0.1);
+}
+
+.emotion-detection {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.emotion-text {
+  flex: 1;
+}
+
+.emotion-state {
+  font-weight: bold;
+  color: #673ab7;
+}
+
+body.dark-mode .emotion-state {
+  color: #bb86fc;
+}
+
+.recording {
+  background-color: #f44336 !important;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 65, 54, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 65, 54, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 65, 54, 0);
+  }
+}
+
+.recording-status {
+  margin-top: 10px;
+  font-style: italic;
+  color: #888;
+}
+
+/* Intervention specific styling */
+.intervention-content {
+  margin: 20px 0;
+}
+
+.feedback-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+/* Tic Tac Toe Game */
+.game-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-gap: 5px;
+  max-width: 300px;
+  margin: 20px auto;
+}
+
+.cell {
+  width: 80px;
+  height: 80px;
+  background: #f0f0f0;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 32px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+body.dark-mode .cell {
+  background: #333;
+}
+
+.cell:hover {
+  background: #e0e0e0;
+}
+
+body.dark-mode .cell:hover {
+  background: #444;
+}
+
+.player-x {
+  color: #3f51b5;
+}
+
+.player-o {
+  color: #f44336;
+}
+
+.game-status {
+  margin: 15px 0;
+  font-weight: bold;
+  text-align: center;
+}
+
+#resetGame {
+  display: block;
+  margin: 10px auto;
+}
+
+/* Modal styling */
+.modal {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 12px;
+  max-width: 500px;
+  width: 90%;
+}
+
+body.dark-mode .modal-content {
+  background-color: #1e1e1e;
+  color: white;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.form-group input[type="text"],
+.form-group input[type="tel"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+body.dark-mode .form-group input {
+  background-color: #333;
+  border-color: #555;
+  color: white;
+}
+
+/* SMS notification alert */
+.sms-sent-alert {
+  padding: 10px;
+  background-color: #4caf50;
+  color: white;
+  border-radius: 8px;
+  margin-top: 15px;
+  text-align: center;
+}
+
+.sms-error-alert {
+  padding: 10px;
+  background-color: #f44336;
+  color: white;
+  border-radius: 8px;
+  margin-top: 15px;
+  text-align: center;
+}
+
+/* Breathing exercise */
+.breathing-exercise {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.breathing-circle {
+  width: 100px;
+  height: 100px;
+  background-color: #3f51b5;
+  border-radius: 50%;
+  margin: 20px auto;
+  animation: breathe 12s infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); background-color: #3f51b5; }
+  25% { transform: scale(1.5); background-color: #4caf50; }
+  50% { transform: scale(1.5); background-color: #4caf50; }
+  75% { transform: scale(1); background-color: #3f51b5; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .emotion-detection {
+    flex-direction: column;
+  }
+  
+  .speech-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .file-upload-area {
+    margin: 10px 0 0 0;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .form-actions button {
+    margin-bottom: 10px;
+  }
+  
+  .cell {
+    width: 70px;
+    height: 70px;
+    font-size: 28px;
+  }
+}
