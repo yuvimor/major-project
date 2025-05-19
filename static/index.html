@@ -3,89 +3,84 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Emotion UI</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>Emotion Detection App</title>
+  <link rel="stylesheet" href="/static/styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <div class="theme-toggle">
-    <button id="themeToggle">🌙 Toggle Mode</button>
-  </div>
-
   <div class="app-container">
     <div class="header-bar">
-      <div class="project-name"> Assistive Homecare for Mild Dementia Patients </div>
-      <div class="welcome-msg">Welcome!</div>
+      <div class="project-name">Assistive Homecare for Mild Dementia Patients</div>
+      <div class="theme-toggle">
+        <button id="themeToggle">🌙 Dark Mode</button>
+      </div>
     </div>
-
-    <!-- Palette Selection for Light/Dark Mode -->
-    <div class="palette-selection">
-      <button id="calmPalette" class="palette-btn">Calm Palette</button>
-      <button id="brightPalette" class="palette-btn">Bright Palette</button>
-      <button id="serenePalette" class="palette-btn">Serene Palette</button>
-      <button id="sunsetPalette" class="palette-btn">Sunset Palette</button>
-      <button id="mysticPalette" class="palette-btn">Mystic Palette</button>
-      <button id="naturePalette" class="palette-btn">Nature Palette</button>
-      <button id="oceanPalette" class="palette-btn">Ocean Palette</button>
-      <button id="earthyPalette" class="palette-btn">Earthy Palette</button>
-      <button id="starryPalette" class="palette-btn">Starry Palette</button>
-      <button id="moonlitPalette" class="palette-btn">Moonlit Palette</button>
-      <button id="rainbowPalette" class="palette-btn">Rainbow Palette</button>
-      <button id="winterPalette" class="palette-btn">Winter Palette</button>
-      <button id="summerPalette" class="palette-btn">Summer Palette</button>
-      <button id="autumnPalette" class="palette-btn">Autumn Palette</button>
-      <button id="springPalette" class="palette-btn">Spring Palette</button>
-      <button id="fallPalette" class="palette-btn">Fall Palette</button>
-      <button id="snowyPalette" class="palette-btn">Snowy Palette</button>
-      <button id="rainyPalette" class="palette-btn">Rainy Palette</button>
-      <button id="cloudyPalette" class="palette-btn">Cloudy Palette</button>
-    </div>
-
+    
+    <!-- Speech Input Section -->
     <div class="card section-card">
       <h2>🎤 Speech Input</h2>
-      <button class="btn gradient-btn" id="listenBtn">Start Listening</button>
+      <div class="speech-controls">
+        <button class="btn gradient-btn" id="listenBtn">Start Recording</button>
+        <div class="file-upload-area">
+          <label for="audioFileUpload" class="file-upload-btn">Upload Audio File</label>
+          <input type="file" id="audioFileUpload" accept="audio/*" style="display: none;">
+        </div>
+      </div>
+      <div id="recordingStatus" class="recording-status"></div>
     </div>
-
+    
+    <!-- Transcription Section -->
     <div class="card section-card">
       <h2>📝 Transcription</h2>
-      <div class="transcription-box" placeholder="You said..."></div>
+      <div class="transcription-box" id="transcriptionBox">No transcription yet</div>
     </div>
-
-    <div class="card emotion-card">
-      <div class="emotion-graph">
-        <canvas id="emotionGraph"></canvas>
-      </div>
-      <div class="emotion-text">
-        <h3>Detected Emotion: <span class="emotion-state" id="emotionState">Not Detected</span></h3>
-        <p id="emotionDetectedText">We're here to help.</p>
-      </div>
-    </div>
-
-    <div class="card section-card">
-      <h2>🚨 If Tri-triggered</h2>
-      <div class="grid-actions">
-        <button class="action-btn">🎵 Calming Music</button>
-        <button class="action-btn">🧘 Guided Meditation</button>
-        <button class="action-btn">🎮 Casual Game</button>
+    
+    <!-- Emotion Section -->
+    <div class="card emotion-card" id="emotionSection" style="display: none;">
+      <h2>😊 Detected Emotion</h2>
+      <div class="emotion-detection">
+        <div class="emotion-text">
+          <h3>Detected Emotion: <span class="emotion-state" id="emotionState"></span></h3>
+          <p id="emotionDetectedText"></p>
+        </div>
       </div>
     </div>
-
-    <div class="card section-card">
-      <h2>💊 Take Your Medicine</h2>
-      <div class="instruction-steps">
-        <p><strong>Instruction Steps (if ADL):</strong></p>
-        <p>1️⃣ Step 1: Go to the kitchen.</p>
-        <button class="btn done-btn">✅ I'm done</button>
-      </div>
-    </div>
-
-    <!-- 🧩 Emotion History Timeline Section -->
-    <div class="card section-card">
-      <h2>📈 Emotion History</h2>
-      <canvas id="emotionTimelineChart" height="150"></canvas>
+    
+    <!-- Intervention Section -->
+    <div class="card section-card" id="interventionCard" style="display: none;">
+      <h2>🚨 Intervention</h2>
+      <div id="interventionContent"></div>
+      <div id="feedbackArea" style="margin-top: 20px; text-align: center;"></div>
     </div>
   </div>
-
-  <script src="script.js"></script>
+  
+  <!-- Patient Info Modal (Displayed by default) -->
+  <div id="patientInfoModal" class="modal" style="display: flex;">
+    <div class="modal-content">
+      <h3>Patient Information</h3>
+      <form id="patientInfoForm">
+        <div class="form-group">
+          <label for="patientName">Patient Name:</label>
+          <input type="text" id="patientName" required>
+        </div>
+        <div class="form-group">
+          <label for="caregiverPhone">Caregiver Phone Number:</label>
+          <input type="tel" id="caregiverPhone" placeholder="+1234567890" required>
+        </div>
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="rememberInfo" checked>
+            Remember this information
+          </label>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn gradient-btn">Save</button>
+          <button type="button" id="skipButton" class="btn">Skip for Now</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <script src="/static/script.js"></script>
 </body>
 </html>
